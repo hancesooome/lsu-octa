@@ -69,7 +69,12 @@ export default function App() {
       if (searchQuery) params.append('search', searchQuery);
 
       const response = await fetch(`/api/theses?${params.toString()}`);
-      const data = await response.json();
+      const rawData = await response.json();
+      const data = rawData.map((t: any) => ({
+        ...t,
+        awardee: !!t.awardee,
+        featured: !!t.featured,
+      }));
       setTheses(data);
     } catch (err) {
       console.error(err);
@@ -81,8 +86,16 @@ export default function App() {
   const fetchFeatured = async () => {
     try {
       const response = await fetch('/api/theses/featured');
-      const data = await response.json();
-      setFeaturedThesis(data);
+      const raw = await response.json();
+      if (raw) {
+        setFeaturedThesis({
+          ...raw,
+          awardee: !!raw.awardee,
+          featured: !!raw.featured,
+        });
+      } else {
+        setFeaturedThesis(null);
+      }
     } catch (err) {
       console.error(err);
     }

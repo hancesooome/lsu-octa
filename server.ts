@@ -1,104 +1,23 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let db: Database.Database;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-try {
-  const dbPath = path.join(__dirname, "lsu_octa.db");
-  db = new Database(dbPath);
-  console.log(`Database initialized at: ${dbPath}`);
-} catch (err) {
-  console.error("FAILED TO INITIALIZE DATABASE:", err);
-  // Fallback to in-memory if file fails
-  db = new Database(":memory:");
-  console.log("Falling back to in-memory database.");
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("SUPABASE_URL or SUPABASE_ANON_KEY is not set in environment variables");
 }
 
-// Initialize Database
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('student', 'librarian'))
-  );
-
-  CREATE TABLE IF NOT EXISTS theses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    author TEXT NOT NULL,
-    year INTEGER NOT NULL,
-    college TEXT NOT NULL,
-    summary TEXT NOT NULL,
-    cover_image_url TEXT,
-    pdf_url TEXT,
-    awardee BOOLEAN DEFAULT 0,
-    featured BOOLEAN DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
-    submitted_by INTEGER,
-    approval_date TEXT,
-    FOREIGN KEY (submitted_by) REFERENCES users(id)
-  );
-
-  -- Clean up college names
-  UPDATE theses SET college = 'College of Arts and Sciences' WHERE college LIKE '%CAS%';
-  UPDATE theses SET college = 'College of Business and Accountancy' WHERE college LIKE '%CBA%';
-  UPDATE theses SET college = 'College of Criminal Justice Education' WHERE college LIKE '%CCJE%';
-  UPDATE theses SET college = 'College of Computer Studies, Engineering, and Architecture' WHERE college LIKE '%CCSEA%';
-  UPDATE theses SET college = 'College of Nursing' WHERE college LIKE '%CON%';
-  UPDATE theses SET college = 'College of Teacher Education' WHERE college LIKE '%CTE%';
-  UPDATE theses SET college = 'College of Tourism and Hospitality Management' WHERE college LIKE '%CTHM%';
-`);
-
-// Seed initial data if empty
-const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
-if (userCount.count === 0) {
-  db.prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)").run(
-    "Librarian User", "librarian@lsu.edu.ph", "password123", "librarian"
-  );
-  db.prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)").run(
-    "Student User", "student@lsu.edu.ph", "password123", "student"
-  );
-
-  // Seed some approved theses
-  const insertThesis = db.prepare(`
-    INSERT INTO theses (title, author, year, college, summary, cover_image_url, pdf_url, awardee, featured, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  insertThesis.run(
-    "AI-Driven Smart Campus Navigation",
-    "Juan Dela Cruz",
-    2024,
-    "College of Computer Studies, Engineering, and Architecture",
-    "A comprehensive study on implementing indoor positioning systems for large university campuses using BLE beacons and machine learning.",
-    "https://picsum.photos/seed/thesis1/800/600",
-    "https://example.com/sample.pdf",
-    1,
-    1,
-    "approved"
-  );
-
-  insertThesis.run(
-    "Sustainable Tourism in Misamis Occidental",
-    "Maria Clara",
-    2023,
-    "College of Tourism and Hospitality Management",
-    "Exploring the impact of eco-tourism on local communities and the preservation of natural heritage sites in Northern Mindanao.",
-    "https://picsum.photos/seed/thesis2/800/600",
-    "https://example.com/sample.pdf",
-    0,
-    0,
-    "approved"
-  );
-}
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function startServer() {
   const app = express();
@@ -107,105 +26,242 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
-  app.post("/api/login", (req, res) => {
+  app.post("/api/login", async (req, res) => {
     const { email, password, role } = req.body;
-    const user = db.prepare("SELECT * FROM users WHERE email = ? AND password = ? AND role = ?").get(email, password, role) as any;
-    if (user) {
-      const { password, ...userWithoutPassword } = user;
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .eq("password", password)
+        .eq("role", role)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      if (!data) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const { password: _password, ...userWithoutPassword } = data as any;
       res.json(userWithoutPassword);
-    } else {
-      res.status(401).json({ error: "Invalid credentials" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  app.get("/api/theses", (req, res) => {
-    const { status, college, year, awardee, search } = req.query;
-    let query = "SELECT * FROM theses WHERE 1=1";
-    const params: any[] = [];
+  app.get("/api/theses", async (req, res) => {
+    const { status, college, year, awardee, search } = req.query as any;
+
+    try {
+      let query = supabase.from("theses").select("*");
+
+      if (status) {
+        query = query.eq("status", status);
+      }
+      if (college) {
+        query = query.eq("college", college);
+      }
+      if (year) {
+        query = query.eq("year", Number(year));
+      }
+      if (awardee === "true") {
+        query = query.eq("awardee", true);
+      }
+      if (search) {
+        const term = `%${search}%`;
+        query = query.or(
+          `title.ilike.${term},author.ilike.${term},summary.ilike.${term}`
+        );
+      }
+
+      query = query.order("year", { ascending: false }).order("id", { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      res.json(data || []);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/theses/featured", async (_req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from("theses")
+        .select("*")
+        .eq("featured", true)
+        .eq("status", "approved")
+        .order("id", { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      res.json(data?.[0] || null);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/college-stats", async (_req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from("theses")
+        .select("college, status")
+        .eq("status", "approved");
+
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      const statsMap: Record<string, number> = {};
+      (data || []).forEach((row: any) => {
+        const key = row.college;
+        statsMap[key] = (statsMap[key] || 0) + 1;
+      });
+
+      const stats = Object.entries(statsMap).map(([college, count]) => ({
+        college,
+        count,
+      }));
+
+      res.json(stats);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/theses/:id", async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from("theses")
+        .select("*")
+        .eq("id", Number(req.params.id))
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      if (!data) {
+        return res.status(404).json({ error: "Thesis not found" });
+      }
+
+      res.json(data);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/theses", async (req, res) => {
+    const { title, author, year, college, summary, cover_image_url, pdf_url, submitted_by } =
+      req.body;
+    try {
+      const { data, error } = await supabase
+        .from("theses")
+        .insert({
+          title,
+          author,
+          year,
+          college,
+          summary,
+          cover_image_url,
+          pdf_url,
+          submitted_by,
+          status: "pending",
+        })
+        .select("id")
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      res.json({ id: data?.id });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/theses/:id", async (req, res) => {
+    const { status, awardee, featured, approval_date } = req.body;
+    const id = Number(req.params.id);
+    const updates: any = {};
 
     if (status) {
-      query += " AND status = ?";
-      params.push(status);
+      updates.status = status;
     }
-    if (college) {
-      query += " AND college = ?";
-      params.push(college);
+    if (awardee !== undefined) {
+      updates.awardee = awardee;
     }
-    if (year) {
-      query += " AND year = ?";
-      params.push(year);
-    }
-    if (awardee === 'true') {
-      query += " AND awardee = 1";
-    }
-    if (search) {
-      query += " AND (title LIKE ? OR author LIKE ? OR summary LIKE ?)";
-      const searchParam = `%${search}%`;
-      params.push(searchParam, searchParam, searchParam);
-    }
-
-    query += " ORDER BY year DESC, id DESC";
-    const theses = db.prepare(query).all(...params);
-    res.json(theses);
-  });
-
-  app.get("/api/theses/featured", (req, res) => {
-    const thesis = db.prepare("SELECT * FROM theses WHERE featured = 1 AND status = 'approved' LIMIT 1").get();
-    res.json(thesis || null);
-  });
-
-  app.get("/api/college-stats", (req, res) => {
-    const stats = db.prepare(`
-      SELECT college, COUNT(*) as count 
-      FROM theses 
-      WHERE status = 'approved' 
-      GROUP BY college
-    `).all();
-    res.json(stats);
-  });
-
-  app.get("/api/theses/:id", (req, res) => {
-    const thesis = db.prepare("SELECT * FROM theses WHERE id = ?").get(req.params.id);
-    if (thesis) res.json(thesis);
-    else res.status(404).json({ error: "Thesis not found" });
-  });
-
-  app.post("/api/theses", (req, res) => {
-    const { title, author, year, college, summary, cover_image_url, pdf_url, submitted_by, is_awardee_candidate } = req.body;
-    const result = db.prepare(`
-      INSERT INTO theses (title, author, year, college, summary, cover_image_url, pdf_url, submitted_by, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-    `).run(title, author, year, college, summary, cover_image_url, pdf_url, submitted_by);
-    res.json({ id: result.lastInsertRowid });
-  });
-
-  app.patch("/api/theses/:id", (req, res) => {
-    const { status, awardee, featured, approval_date } = req.body;
-    const updates: string[] = [];
-    const params: any[] = [];
-
-    if (status) { updates.push("status = ?"); params.push(status); }
-    if (awardee !== undefined) { updates.push("awardee = ?"); params.push(awardee ? 1 : 0); }
     if (featured !== undefined) {
-      // If setting a new featured, unset others
       if (featured) {
-        db.prepare("UPDATE theses SET featured = 0").run();
+        await supabase.from("theses").update({ featured: false }).neq("id", id);
       }
-      updates.push("featured = ?");
-      params.push(featured ? 1 : 0);
+      updates.featured = featured;
     }
-    if (approval_date) { updates.push("approval_date = ?"); params.push(approval_date); }
+    if (approval_date) {
+      updates.approval_date = approval_date;
+    }
 
-    if (updates.length === 0) return res.status(400).json({ error: "No fields to update" });
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No fields to update" });
+    }
 
-    params.push(req.params.id);
-    db.prepare(`UPDATE theses SET ${updates.join(", ")} WHERE id = ?`).run(...params);
-    res.json({ success: true });
+    try {
+      const { error } = await supabase.from("theses").update(updates).eq("id", id);
+
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
-  app.get("/api/my-submissions/:userId", (req, res) => {
-    const theses = db.prepare("SELECT * FROM theses WHERE submitted_by = ? ORDER BY id DESC").all(req.params.userId);
-    res.json(theses);
+  app.get("/api/my-submissions/:userId", async (req, res) => {
+    const userId = Number(req.params.userId);
+    try {
+      const { data, error } = await supabase
+        .from("theses")
+        .select("*")
+        .eq("submitted_by", userId)
+        .order("id", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+      }
+
+      res.json(data || []);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
   });
 
   // Vite middleware for development
@@ -232,4 +288,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error("Failed to start server", err);
+  process.exit(1);
+});
