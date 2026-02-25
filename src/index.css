@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Stable Brand Colors */
+  --brand-green-deep: #0B3D21;
+  --brand-green-primary: #146C43;
+  --brand-gold: #C5A028;
+  
+  /* Theme Semantic Colors - Light */
+  --bg-color: #F7F9F7;
+  --text-main: #1A1C1B;
+  --text-muted: #6B7280;
+  --text-title: #0B3D21; /* Brand deep green in light mode */
+  
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --card-bg: rgba(255, 255, 255, 0.5);
+  --card-border: rgba(255, 255, 255, 0.7);
+  --input-bg: rgba(255, 255, 255, 0.5);
+  --input-border: rgba(255, 255, 255, 0.8);
+}
+
+.dark {
+  /* Theme Semantic Colors - Dark */
+  --bg-color: #020617;
+  --text-main: #F1F5F9;
+  --text-muted: #94A3B8;
+  --text-title: #4ADE80; /* Vibrant green in dark mode */
+  
+  --glass-bg: rgba(15, 23, 42, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --card-bg: rgba(30, 41, 59, 0.4);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(0, 0, 0, 0.4);
+  --input-border: rgba(255, 255, 255, 0.1);
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-lsu-green-deep: var(--brand-green-deep);
+  --color-lsu-green-primary: var(--brand-green-primary);
+  --color-lsu-gold: var(--brand-gold);
+  
+  --color-theme-text: var(--text-main);
+  --color-theme-muted: var(--text-muted);
+  --color-theme-title: var(--text-title);
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased selection:bg-lsu-green-primary/20;
+    color: var(--text-main);
+    background-color: var(--bg-color);
+    background-image: 
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+      linear-gradient(rgba(20, 108, 67, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 108, 67, 0.03) 1px, transparent 1px),
+      radial-gradient(at 0% 0%, rgba(20, 108, 67, 0.06) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(197, 160, 40, 0.04) 0px, transparent 50%);
+    background-size: 100px 100px, 40px 40px, 40px 40px, 100% 100%, 100% 100%;
+    background-blend-mode: overlay, normal, normal, normal, normal;
+    min-height: 100vh;
+    transition: background-color 0.5s ease, color 0.5s ease;
+  }
+
+  h1, h2, h3, .serif {
+    @apply font-serif tracking-tight;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply backdrop-blur-2xl border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] rounded-[1.5rem] transition-all duration-500;
+    background-color: var(--glass-bg);
+    border-color: var(--glass-border);
+  }
+  
+  .glass-card {
+    @apply backdrop-blur-xl border shadow-sm rounded-2xl transition-all duration-500 ease-out;
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+  }
+
+  .glass-card:hover {
+    @apply -translate-y-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.08)];
+    background-color: var(--glass-bg);
+    border-color: var(--input-border);
+  }
+
+  .btn-primary {
+    @apply bg-lsu-green-primary text-white px-8 py-3 rounded-full font-medium transition-all duration-300 hover:shadow-lg hover:shadow-lsu-green-primary/20 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply text-lsu-green-deep border border-lsu-green-deep/10 px-8 py-3 rounded-full font-medium transition-all duration-300 shadow-sm active:scale-[0.98] flex items-center justify-center gap-2;
+    background-color: var(--card-bg);
+  }
+
+  .input-glass {
+    @apply border rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-lsu-green-primary/10 transition-all duration-300 placeholder:text-theme-muted/60;
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+  }
+
+  .section-label {
+    @apply text-[11px] font-mono uppercase tracking-[0.3em] text-theme-muted/80 mb-4 block;
+  }
+}
+
+/* Custom Utilities */
+.text-balance { text-wrap: balance; }
+.text-pretty { text-wrap: pretty; }
