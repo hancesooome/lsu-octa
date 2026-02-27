@@ -5,9 +5,9 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 
 function getSupabase() {
-  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error("SUPABASE_URL or SUPABASE_ANON_KEY is not set");
+  const url = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "").trim();
+  const key = (process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "").trim();
+  if (!url || !key) throw new Error("SUPABASE_URL and SUPABASE_ANON_KEY (or VITE_* variants) must be set in Vercel Environment Variables");
   return createClient(url, key);
 }
 
@@ -176,7 +176,7 @@ app.get("/api/users", async (_req, res) => {
 
 app.get("/api/users/by-id-number", async (req, res) => {
   try {
-    const idNumber = String(req.query.id || req.query.idNumber || "").trim();
+    const idNumber = String(req.query.id ?? req.query.idNumber ?? "").trim();
     if (!idNumber) return res.status(400).json({ error: "ID number is required" });
     const { data, error } = await supabase().from("users").select("id, name, email, id_number").eq("role", "student").eq("id_number", idNumber).maybeSingle();
     if (error) return res.status(500).json({ error: "Internal server error" });
@@ -332,6 +332,15 @@ app.patch("/api/collaboration-requests/:id", async (req, res) => {
     console.error(e);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// 404 handler - ensure JSON response
+app.use((_req, res) => res.status(404).json({ error: "Not found" }));
+
+// Global error handler - ensure JSON
+app.use((err: Error, _req: express.Request, res: express.Response) => {
+  console.error(err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 export default app;
