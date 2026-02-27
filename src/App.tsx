@@ -13,6 +13,7 @@ import { LoginModal } from './components/LoginModal';
 import { ThesisDetailPage } from './components/ThesisDetailPage';
 import { SubmissionForm } from './components/SubmissionForm';
 import { LibrarianDashboard } from './components/LibrarianDashboard';
+import { SubmissionStatus } from './components/SubmissionStatus';
 
 const STORAGE_KEY = 'lsu-octa-user';
 
@@ -522,16 +523,7 @@ export default function App() {
                     <div className="space-y-8">
                       <GlassCard className="p-6">
                         <h3 className="text-lg font-display font-bold text-theme-title mb-4">Submission Status</h3>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-xl">
-                            <span className="text-sm font-medium text-theme-text">Approved</span>
-                            <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">2</span>
-                          </div>
-                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-xl">
-                            <span className="text-sm font-medium text-theme-text">Pending</span>
-                            <span className="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">1</span>
-                          </div>
-                        </div>
+                        <SubmissionStatus userId={user.id} />
                       </GlassCard>
 
                       <GlassCard className="p-6 bg-lsu-green-primary text-white">

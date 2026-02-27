@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Thesis, COLLEGES } from '../types';
-import { Check, X, Eye, Award, Star } from 'lucide-react';
+import { Check, X, Eye, Award, Star, FileText, Users } from 'lucide-react';
 import { motion } from 'motion/react';
+import { StudentManagement } from './StudentManagement';
 
 interface LibrarianDashboardProps {
   onViewThesis?: (thesis: Thesis) => void;
 }
 
 export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewThesis }) => {
+  const [mainTab, setMainTab] = useState<'submissions' | 'students'>('submissions');
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +75,33 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-3xl font-display font-bold text-theme-title">Librarian Control Panel</h2>
         <div className="flex p-1 bg-lsu-green-primary/5 rounded-xl">
+          <button
+            onClick={() => setMainTab('submissions')}
+            className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 ${
+              mainTab === 'submissions' ? 'bg-white text-lsu-green-primary shadow-sm' : 'text-theme-muted hover:text-lsu-green-primary'
+            }`}
+          >
+            <FileText size={16} /> Submissions
+          </button>
+          <button
+            onClick={() => setMainTab('students')}
+            className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 ${
+              mainTab === 'students' ? 'bg-white text-lsu-green-primary shadow-sm' : 'text-theme-muted hover:text-lsu-green-primary'
+            }`}
+          >
+            <Users size={16} /> Students
+          </button>
+        </div>
+      </div>
+
+      {mainTab === 'students' ? (
+        <div className="glass-panel p-8">
+          <StudentManagement />
+        </div>
+      ) : (
+        <>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex p-1 bg-lsu-green-primary/5 rounded-xl">
           {(['pending', 'approved', 'rejected'] as const).map(tab => (
             <button
               key={tab}
@@ -86,8 +115,8 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
               {tab}
             </button>
           ))}
+          </div>
         </div>
-      </div>
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -178,6 +207,8 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
             </motion.div>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );

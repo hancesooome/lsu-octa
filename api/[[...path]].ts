@@ -133,6 +133,61 @@ app.patch("/api/theses/:id", async (req, res) => {
   }
 });
 
+app.get("/api/users", async (_req, res) => {
+  try {
+    const { data, error } = await supabase().from("users").select("id, name, email, role").eq("role", "student").order("id", { ascending: false });
+    if (error) return res.status(500).json({ error: "Internal server error" });
+    res.json(data || []);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/users", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: "Name, email, and password are required" });
+    const { data, error } = await supabase().from("users").insert({ name, email, password, role: "student" }).select("id, name, email, role").maybeSingle();
+    if (error) return res.status(500).json({ error: error.message || "Internal server error" });
+    if (!data) return res.status(500).json({ error: "Failed to create user" });
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.patch("/api/users/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { name, email, password } = req.body;
+    const u: Record<string, unknown> = {};
+    if (name !== undefined) u.name = name;
+    if (email !== undefined) u.email = email;
+    if (password !== undefined && password !== "") u.password = password;
+    if (Object.keys(u).length === 0) return res.status(400).json({ error: "No fields to update" });
+    const { error } = await supabase().from("users").update(u).eq("id", id);
+    if (error) return res.status(500).json({ error: error.message || "Internal server error" });
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/api/users/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { error } = await supabase().from("users").delete().eq("id", id);
+    if (error) return res.status(500).json({ error: error.message || "Internal server error" });
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/my-submissions/:userId", async (req, res) => {
   try {
     const { data, error } = await supabase().from("theses").select("*").eq("submitted_by", Number(req.params.userId)).order("id", { ascending: false });
