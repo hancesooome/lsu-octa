@@ -72,7 +72,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
             value={formData.title}
             onChange={e => setFormData({ ...formData, title: e.target.value })}
             placeholder="Enter the full title of your capstone project"
-            className="w-full input-glass dark:text-white dark:placeholder:text-white/40"
+            className="w-full input-glass"
           />
         </div>
 
@@ -85,7 +85,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
             required
             value={formData.author}
             onChange={e => setFormData({ ...formData, author: e.target.value })}
-            className="w-full input-glass dark:text-white"
+            className="w-full input-glass"
           />
         </div>
 
@@ -96,7 +96,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
           <select
             value={formData.year}
             onChange={e => setFormData({ ...formData, year: parseInt(e.target.value) })}
-            className="w-full input-glass dark:text-white dark:bg-slate-900"
+            className="w-full input-glass"
           >
             {[2026, 2025, 2024, 2023, 2022, 2021].map(y => (
               <option key={y} value={y}>{y}</option>
@@ -111,7 +111,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
           <select
             value={formData.college}
             onChange={e => setFormData({ ...formData, college: e.target.value })}
-            className="w-full input-glass dark:text-white dark:bg-slate-900"
+            className="w-full input-glass"
           >
             {COLLEGES.map(c => (
               <option key={c.abbreviation} value={c.name}>{c.name} ({c.abbreviation})</option>
@@ -129,7 +129,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
             value={formData.summary}
             onChange={e => setFormData({ ...formData, summary: e.target.value })}
             placeholder="Provide a concise summary of your research findings..."
-            className="w-full input-glass resize-none dark:text-white dark:placeholder:text-white/40"
+            className="w-full input-glass resize-none"
           />
         </div>
 

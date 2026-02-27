@@ -29,7 +29,7 @@ export const ThesisDetailModal: React.FC<ThesisDetailModalProps> = ({ thesis, on
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-2 bg-white/10 dark:bg-black/20 hover:bg-white/20 rounded-full text-theme-title hover:text-lsu-green-primary transition-all shadow-sm backdrop-blur-md"
+            className="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 rounded-full text-theme-title hover:text-lsu-green-primary transition-all shadow-sm backdrop-blur-md"
           >
             <X size={20} />
           </button>
@@ -69,18 +69,18 @@ export const ThesisDetailModal: React.FC<ThesisDetailModalProps> = ({ thesis, on
                   </p>
                 </section>
 
-                <section className="bg-lsu-green-deep/5 dark:bg-white/5 rounded-[2.5rem] p-10 border border-white/10">
+                <section className="bg-lsu-green-deep/5 rounded-[2.5rem] p-10 border border-white/10">
                   <div className="flex items-center justify-between mb-8">
                     <span className="section-label !mb-0">Document Preview</span>
                     <span className="text-[10px] font-mono uppercase text-theme-muted">Secure Institutional Access</span>
                   </div>
-                  <div className="aspect-[16/10] bg-white/10 dark:bg-white/5 backdrop-blur-sm rounded-3xl border border-white/20 flex flex-col items-center justify-center text-center p-12 relative overflow-hidden group">
+                  <div className="aspect-[16/10] bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20 flex flex-col items-center justify-center text-center p-12 relative overflow-hidden group">
                     <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
                       <div className="text-6xl font-serif font-bold rotate-[-30deg] whitespace-nowrap text-theme-title">
                         LSU OCTA • INSTITUTIONAL REPOSITORY • LSU OCTA • INSTITUTIONAL REPOSITORY
                       </div>
                     </div>
-                    <div className="w-20 h-20 bg-lsu-green-deep/5 dark:bg-white/5 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                    <div className="w-20 h-20 bg-lsu-green-deep/5 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
                       <FileText size={40} className="text-lsu-green-primary" />
                     </div>
                     <h3 className="text-2xl font-serif font-medium text-theme-title mb-3">Full Manuscript Access</h3>
@@ -144,7 +144,7 @@ export const ThesisDetailModal: React.FC<ThesisDetailModalProps> = ({ thesis, on
                     <span className="section-label">Academic Tags</span>
                     <div className="flex flex-wrap gap-2">
                       {["Research", "Innovation", "LSU", "Capstone"].map(tag => (
-                        <span key={tag} className="text-[11px] font-mono uppercase tracking-wider bg-white/10 dark:bg-white/5 px-3 py-1.5 rounded-lg text-theme-title border border-white/10">
+                        <span key={tag} className="text-[11px] font-mono uppercase tracking-wider bg-white/10 px-3 py-1.5 rounded-lg text-theme-title border border-white/10">
                           #{tag}
                         </span>
                       ))}

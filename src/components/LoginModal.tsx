@@ -64,7 +64,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 p-2 text-theme-muted hover:text-lsu-green-primary transition-colors bg-white/10 dark:bg-white/5 rounded-full"
+              className="absolute top-6 right-6 p-2 text-theme-muted hover:text-lsu-green-primary transition-colors bg-white/10 rounded-full"
             >
               <X size={18} />
             </button>
@@ -74,13 +74,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               <p className="text-theme-muted font-light">Secure login for LSU OCTA members</p>
             </div>
 
-            <div className="flex p-1.5 bg-lsu-green-deep/5 dark:bg-white/5 rounded-2xl mb-8">
+            <div className="flex p-1.5 bg-lsu-green-deep/5 rounded-2xl mb-8">
               <button
                 onClick={() => setRole('student')}
                 className={`flex-1 py-2.5 text-xs font-mono font-bold uppercase tracking-widest rounded-xl transition-all duration-300 ${
                   role === 'student' 
-                    ? 'bg-white dark:bg-lsu-green-primary text-lsu-green-deep dark:text-white shadow-sm' 
-                    : 'text-lsu-muted dark:text-lsu-muted/60 hover:text-lsu-green-deep dark:hover:text-white'
+                    ? 'bg-white text-lsu-green-deep shadow-sm' 
+                    : 'text-lsu-muted hover:text-lsu-green-deep'
                 }`}
               >
                 Student
@@ -89,8 +89,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 onClick={() => setRole('librarian')}
                 className={`flex-1 py-2.5 text-xs font-mono font-bold uppercase tracking-widest rounded-xl transition-all duration-300 ${
                   role === 'librarian' 
-                    ? 'bg-white dark:bg-lsu-green-primary text-lsu-green-deep dark:text-white shadow-sm' 
-                    : 'text-lsu-muted dark:text-lsu-muted/60 hover:text-lsu-green-deep dark:hover:text-white'
+                    ? 'bg-white text-lsu-green-deep shadow-sm' 
+                    : 'text-lsu-muted hover:text-lsu-green-deep'
                 }`}
               >
                 Librarian
@@ -99,25 +99,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <label className="section-label !mb-0 ml-1 dark:text-lsu-muted">Academic Email</label>
+                <label className="section-label !mb-0 ml-1">Academic Email</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={role === 'student' ? 'student@lsu.edu.ph' : 'librarian@lsu.edu.ph'}
-                  className="w-full input-glass dark:text-white dark:placeholder:text-white/40"
+                  className="w-full input-glass"
                 />
               </div>
               <div className="space-y-2">
-                <label className="section-label !mb-0 ml-1 dark:text-lsu-muted">Password</label>
+                <label className="section-label !mb-0 ml-1">Password</label>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full input-glass dark:text-white dark:placeholder:text-white/40"
+                  className="w-full input-glass"
                 />
               </div>
 

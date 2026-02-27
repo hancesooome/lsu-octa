@@ -3,7 +3,11 @@ import { Thesis, COLLEGES } from '../types';
 import { Check, X, Eye, Award, Star } from 'lucide-react';
 import { motion } from 'motion/react';
 
-export const LibrarianDashboard: React.FC = () => {
+interface LibrarianDashboardProps {
+  onViewThesis?: (thesis: Thesis) => void;
+}
+
+export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewThesis }) => {
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,14 +72,14 @@ export const LibrarianDashboard: React.FC = () => {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-3xl font-display font-bold text-theme-title">Librarian Control Panel</h2>
-        <div className="flex p-1 bg-lsu-green-primary/5 dark:bg-white/5 rounded-xl">
+        <div className="flex p-1 bg-lsu-green-primary/5 rounded-xl">
           {(['pending', 'approved', 'rejected'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${
                 activeTab === tab 
-                  ? 'bg-white dark:bg-lsu-green-primary text-lsu-green-primary dark:text-white shadow-sm' 
+                  ? 'bg-white text-lsu-green-primary shadow-sm' 
                   : 'text-theme-muted hover:text-lsu-green-primary'
               }`}
             >
@@ -147,7 +151,7 @@ export const LibrarianDashboard: React.FC = () => {
                     <button
                       onClick={() => toggleAward(thesis.id, thesis.awardee)}
                       className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                        thesis.awardee ? 'bg-lsu-gold text-white' : 'bg-white/10 dark:bg-white/5 text-lsu-gold border border-lsu-gold/20'
+                        thesis.awardee ? 'bg-lsu-gold text-white' : 'bg-white/10 text-lsu-gold border border-lsu-gold/20'
                       }`}
                     >
                       <Award size={16} fill={thesis.awardee ? "white" : "none"} />
@@ -156,7 +160,7 @@ export const LibrarianDashboard: React.FC = () => {
                     <button
                       onClick={() => setFeatured(thesis.id)}
                       className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                        thesis.featured ? 'bg-lsu-green-primary text-white' : 'bg-white/10 dark:bg-white/5 text-lsu-green-primary border border-lsu-green-primary/20'
+                        thesis.featured ? 'bg-lsu-green-primary text-white' : 'bg-white/10 text-lsu-green-primary border border-lsu-green-primary/20'
                       }`}
                     >
                       <Star size={16} fill={thesis.featured ? "white" : "none"} />
@@ -164,7 +168,10 @@ export const LibrarianDashboard: React.FC = () => {
                     </button>
                   </>
                 )}
-                <button className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 dark:bg-white/5 text-theme-title px-4 py-2 rounded-xl text-sm font-bold border border-white/20 hover:bg-white/20 transition-colors">
+                <button
+                  onClick={() => onViewThesis?.(thesis)}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 text-theme-title px-4 py-2 rounded-xl text-sm font-bold border border-white/20 hover:bg-white/20 transition-colors"
+                >
                   <Eye size={16} /> View
                 </button>
               </div>

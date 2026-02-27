@@ -4,23 +4,32 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Award, LogIn, LogOut, User as UserIcon, Plus, LayoutDashboard, Home, ChevronRight, BookOpen, Star, Moon, Sun } from 'lucide-react';
+import { Search, Filter, Award, LogIn, LogOut, User as UserIcon, Plus, LayoutDashboard, Home, ChevronRight, BookOpen, Star, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Thesis, COLLEGES } from './types';
 import { GlassPanel, GlassCard } from './components/GlassUI';
 import { ThesisCard } from './components/ThesisCard';
 import { LoginModal } from './components/LoginModal';
-import { ThesisDetailModal } from './components/ThesisDetailModal';
+import { ThesisDetailPage } from './components/ThesisDetailPage';
 import { SubmissionForm } from './components/SubmissionForm';
 import { LibrarianDashboard } from './components/LibrarianDashboard';
 
+const STORAGE_KEY = 'lsu-octa-user';
+
+function getStoredUser(): User | null {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(getStoredUser);
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [featuredThesis, setFeaturedThesis] = useState<Thesis | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedThesis, setSelectedThesis] = useState<Thesis | null>(null);
-  const [view, setView] = useState<'home' | 'dashboard' | 'submit' | 'about' | 'colleges'>('home');
+  const [view, setView] = useState<'home' | 'dashboard' | 'submit' | 'about' | 'colleges' | 'thesis'>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     college: '',
@@ -29,7 +38,6 @@ export default function App() {
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [collegeStats, setCollegeStats] = useState<{[key: string]: number}>({});
 
   const fetchCollegeStats = async () => {
@@ -56,12 +64,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
+    if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    else localStorage.removeItem(STORAGE_KEY);
+  }, [user]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [view]);
 
   const fetchTheses = async () => {
     setLoading(true);
@@ -118,10 +127,11 @@ export default function App() {
   }, [filters, searchQuery]);
 
   const handleThesisClick = (thesis: Thesis) => {
-    if (!user) {
-      setIsLoginModalOpen(true);
+    setSelectedThesis(thesis);
+    if (user) {
+      setView('thesis');
     } else {
-      setSelectedThesis(thesis);
+      setIsLoginModalOpen(true);
     }
   };
 
@@ -175,13 +185,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 text-theme-muted hover:text-lsu-green-primary transition-colors bg-lsu-green-deep/5 rounded-xl"
-              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
             {user ? (
               <div className="flex items-center gap-4">
                 <div className="hidden md:block text-right">
@@ -266,21 +269,21 @@ export default function App() {
                   </div>
 
                   <div id="search-section" className="max-w-3xl mx-auto space-y-4">
-                    <div className="flex flex-col md:flex-row gap-3 p-2 glass-panel bg-white/60 dark:bg-black/40 shadow-2xl border-white/80 dark:border-white/10">
-                      <div className="flex-grow relative">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-theme-muted dark:text-theme-muted/80" size={20} />
+                    <div className="flex flex-col md:flex-row overflow-hidden rounded-2xl bg-white border border-gray-200 shadow-sm">
+                      <div className="flex-grow relative flex">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                         <input 
                           type="text"
                           placeholder="Search by title, author, or keyword..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-14 pr-6 py-4 bg-transparent outline-none text-lg font-light placeholder:text-theme-muted/40 dark:placeholder:text-white/40 dark:text-white"
+                          className="w-full pl-14 pr-6 py-4 bg-transparent outline-none text-base text-gray-900 placeholder:text-gray-400"
                         />
                       </div>
                       <button 
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        className={`flex items-center justify-center gap-2 py-4 px-8 rounded-2xl font-medium transition-all duration-300 ${
-                          isFilterOpen ? 'bg-lsu-green-deep text-white shadow-lg' : 'bg-white/60 dark:bg-white/10 text-lsu-green-deep dark:text-white hover:bg-white dark:hover:bg-white/20'
+                        className={`flex items-center justify-center gap-2 py-4 px-8 font-medium transition-all border-l border-gray-100 ${
+                          isFilterOpen ? 'bg-lsu-green-deep text-white' : 'text-gray-600 hover:bg-gray-50'
                         }`}
                       >
                         <Filter size={20} />
@@ -361,14 +364,14 @@ export default function App() {
               {/* Featured Section - Compact Cinematic Version */}
               {featuredThesis && !searchQuery && !filters.college && !filters.year && !filters.awardee && (
                 <section className="space-y-8">
-                  <div className="flex items-end justify-between border-b border-lsu-green-deep/10 dark:border-white/10 pb-4">
+                  <div className="flex items-end justify-between border-b border-lsu-green-deep/10 pb-4">
                     <div className="space-y-1">
                       <span className="section-label !mb-0">Academic Spotlight</span>
-                      <h3 className="text-2xl font-serif font-medium text-lsu-green-deep dark:text-lsu-green-primary">Thesis of the Year</h3>
+                      <h3 className="text-2xl font-serif font-medium text-lsu-green-deep">Thesis of the Year</h3>
                     </div>
                     <div className="hidden md:block text-right">
                       <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-theme-muted">Selection Cycle</p>
-                      <p className="font-serif italic text-lsu-green-primary dark:text-lsu-gold">AY {featuredThesis.year}</p>
+                      <p className="font-serif italic text-lsu-green-primary">AY {featuredThesis.year}</p>
                     </div>
                   </div>
                   
@@ -497,7 +500,7 @@ export default function App() {
               className="space-y-8"
             >
               {user.role === 'librarian' ? (
-                <LibrarianDashboard />
+                <LibrarianDashboard onViewThesis={(t) => { setSelectedThesis(t); setView('thesis'); }} />
               ) : (
                 <div className="space-y-8">
                   <div className="flex items-center justify-between">
@@ -513,18 +516,18 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <GlassCard className="p-6 md:col-span-2">
                       <h3 className="text-xl font-display font-bold text-theme-title mb-6">My Submissions</h3>
-                      <MySubmissionsList userId={user.id} onSelect={setSelectedThesis} />
+                      <MySubmissionsList userId={user.id} onSelect={(t) => { setSelectedThesis(t); setView('thesis'); }} />
                     </GlassCard>
                     
                     <div className="space-y-8">
                       <GlassCard className="p-6">
                         <h3 className="text-lg font-display font-bold text-theme-title mb-4">Submission Status</h3>
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between p-3 bg-white/10 dark:bg-white/5 rounded-xl">
+                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-xl">
                             <span className="text-sm font-medium text-theme-text">Approved</span>
                             <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">2</span>
                           </div>
-                          <div className="flex items-center justify-between p-3 bg-white/10 dark:bg-white/5 rounded-xl">
+                          <div className="flex items-center justify-between p-3 bg-white/10 rounded-xl">
                             <span className="text-sm font-medium text-theme-text">Pending</span>
                             <span className="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">1</span>
                           </div>
@@ -558,7 +561,7 @@ export default function App() {
               <div className="flex items-center gap-4 mb-8">
                 <button 
                   onClick={() => setView('dashboard')}
-                  className="p-2 hover:bg-white/10 dark:hover:bg-white/5 rounded-full transition-colors text-theme-title"
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-theme-title"
                 >
                   <ChevronRight size={24} className="rotate-180" />
                 </button>
@@ -568,6 +571,21 @@ export default function App() {
               <GlassPanel className="p-8 md:p-12">
                 <SubmissionForm user={user} onSuccess={() => setView('dashboard')} />
               </GlassPanel>
+            </motion.div>
+          )}
+
+          {view === 'thesis' && selectedThesis && (
+            <motion.div
+              key="thesis"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="max-w-5xl mx-auto"
+            >
+              <ThesisDetailPage
+                thesis={selectedThesis}
+                onBack={() => { setSelectedThesis(null); setView('home'); }}
+              />
             </motion.div>
           )}
 
@@ -685,37 +703,41 @@ export default function App() {
 
       {/* Mobile Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden px-4 pb-4">
-        <GlassPanel className="flex items-center justify-around py-3 px-6 shadow-2xl">
+        <GlassPanel className="flex items-center justify-around py-3 px-4 shadow-2xl gap-1">
           <button 
             onClick={() => setView('home')}
             className={`p-2 rounded-xl transition-all ${view === 'home' ? 'bg-lsu-green-primary text-white' : 'text-theme-muted'}`}
           >
-            <Home size={24} />
+            <Home size={22} />
           </button>
           <button 
             onClick={() => setView('colleges')}
             className={`p-2 rounded-xl transition-all ${view === 'colleges' ? 'bg-lsu-green-primary text-white' : 'text-theme-muted'}`}
           >
-            <BookOpen size={24} />
+            <BookOpen size={22} />
           </button>
           <button 
-            onClick={() => {
-              if (!user) setIsLoginModalOpen(true);
-              else setView('dashboard');
-            }}
-            className={`p-2 rounded-xl transition-all ${view === 'dashboard' ? 'bg-lsu-green-primary text-white' : 'text-theme-muted'}`}
+            onClick={() => setView('about')}
+            className={`p-2 rounded-xl transition-all ${view === 'about' ? 'bg-lsu-green-primary text-white' : 'text-theme-muted'}`}
           >
-            <LayoutDashboard size={24} />
+            <Info size={22} />
           </button>
-          <button 
-            onClick={() => {
-              if (!user) setIsLoginModalOpen(true);
-              else setView('submit');
-            }}
-            className={`p-2 rounded-xl transition-all ${view === 'submit' ? 'bg-lsu-green-primary text-white' : 'text-theme-muted'}`}
-          >
-            <Plus size={24} />
-          </button>
+          {user && (
+            <>
+              <button 
+                onClick={() => setView('dashboard')}
+                className={`p-2 rounded-xl transition-all ${view === 'dashboard' ? 'bg-lsu-green-primary text-white' : 'text-theme-muted'}`}
+              >
+                <LayoutDashboard size={22} />
+              </button>
+              <button 
+                onClick={() => setView('submit')}
+                className={`p-2 rounded-xl transition-all ${view === 'submit' ? 'bg-lsu-green-primary text-white' : 'text-theme-muted'}`}
+              >
+                <Plus size={22} />
+              </button>
+            </>
+          )}
         </GlassPanel>
       </div>
 
@@ -723,13 +745,9 @@ export default function App() {
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
-        onLogin={setUser} 
+        onLogin={(user) => { setUser(user); setView(selectedThesis ? 'thesis' : 'dashboard'); }} 
       />
       
-      <ThesisDetailModal 
-        thesis={selectedThesis} 
-        onClose={() => setSelectedThesis(null)} 
-      />
     </div>
   );
 }
@@ -767,7 +785,7 @@ function CollegesView({ onSelectCollege }: { onSelectCollege: (name: string) => 
             className="glass-card group cursor-pointer overflow-hidden flex h-44 md:h-48"
             onClick={() => onSelectCollege(college.name)}
           >
-            <div className="w-1/3 bg-lsu-green-deep/5 dark:bg-white/5 flex items-center justify-center p-6 relative overflow-hidden border-r border-white/10">
+            <div className="w-1/3 bg-lsu-green-deep/5 flex items-center justify-center p-6 relative overflow-hidden border-r border-white/10">
                <div className="absolute inset-0 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity pointer-events-none">
                   <div className="absolute -top-8 -left-8 text-[10rem] font-serif font-bold text-lsu-green-primary leading-none">{college.abbreviation[0]}</div>
                </div>
@@ -779,13 +797,10 @@ function CollegesView({ onSelectCollege }: { onSelectCollege: (name: string) => 
                 />
             </div>
             <div className="w-2/3 p-6 flex flex-col justify-between relative">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Award size={48} className="text-lsu-green-primary" />
-              </div>
               <div>
                 <div className="flex items-center justify-between mb-3">
                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-lsu-green-primary font-bold">{college.abbreviation}</span>
-                   <div className="flex items-center gap-1.5 text-theme-muted bg-white/10 dark:bg-white/5 px-2 py-1 rounded-md">
+                   <div className="flex items-center gap-1.5 text-theme-muted bg-white/10 px-2 py-1 rounded-md">
                       <BookOpen size={12} className="text-lsu-green-primary" />
                       <span className="text-[10px] font-mono font-bold">{stats[college.name] || 0}</span>
                    </div>
@@ -825,7 +840,7 @@ function MySubmissionsList({ userId, onSelect }: { userId: number, onSelect: (t:
     fetchMySubmissions();
   }, [userId]);
 
-  if (loading) return <div className="space-y-4">{[1, 2].map(i => <div key={i} className="h-20 bg-white/10 dark:bg-white/5 animate-pulse rounded-xl"></div>)}</div>;
+  if (loading) return <div className="space-y-4">{[1, 2].map(i => <div key={i} className="h-20 bg-white/10 animate-pulse rounded-xl"></div>)}</div>;
 
   if (submissions.length === 0) return <p className="text-center py-10 text-theme-muted">You haven't submitted any theses yet.</p>;
 
@@ -834,7 +849,7 @@ function MySubmissionsList({ userId, onSelect }: { userId: number, onSelect: (t:
       {submissions.map(t => (
         <div 
           key={t.id} 
-          className="flex items-center justify-between p-4 bg-white/10 dark:bg-white/5 rounded-xl hover:bg-white/20 transition-colors cursor-pointer border border-white/20"
+          className="flex items-center justify-between p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors cursor-pointer border border-white/20"
           onClick={() => onSelect(t)}
         >
           <div className="min-w-0 flex-grow mr-4">
