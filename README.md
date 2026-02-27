@@ -12,9 +12,23 @@ View your app in AI Studio: https://ai.studio/apps/06961b56-75ab-4c6a-b28e-959ef
 
 **Prerequisites:**  Node.js
 
+1. Install dependencies: `npm install`
+2. Create `.env` with:
+   - `VITE_SUPABASE_URL` or `SUPABASE_URL` = your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY` or `SUPABASE_ANON_KEY` = your Supabase anon key
+3. Run the app: `npm run dev`
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Deploy to Vercel
+
+**Important:** `.env` is gitignored, so you must add env vars in Vercel.
+
+1. In Vercel: **Project → Settings → Environment Variables**
+2. Add (for Production, Preview, and Development):
+   - `VITE_SUPABASE_URL` = `https://YOUR_PROJECT_REF.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` = your Supabase anon/publishable key
+   - Or use `SUPABASE_URL` and `SUPABASE_ANON_KEY` instead
+3. Redeploy
+
+**Debug:** After deploy, open `https://your-app.vercel.app/api/health`:
+- `supabaseConfigured: true` → env vars are set correctly
+- `supabaseConfigured: false` → add env vars in Vercel and redeploy
