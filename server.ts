@@ -10,8 +10,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error("SUPABASE_URL or SUPABASE_ANON_KEY is not set in environment variables");
@@ -19,10 +19,9 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function startServer() {
+/** Creates the Express app with API routes only (used for Vercel serverless) */
+export function createApiApp() {
   const app = express();
-  const PORT = 3000;
-
   app.use(express.json());
 
   // API Routes
@@ -264,6 +263,13 @@ async function startServer() {
     }
   });
 
+  return app;
+}
+
+async function startServer() {
+  const app = createApiApp();
+  const PORT = 3000;
+
   // Vite middleware for development
   const isProduction = process.env.NODE_ENV === "production";
   
@@ -288,7 +294,10 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error("Failed to start server", err);
-  process.exit(1);
-});
+// Skip listen when running on Vercel (API is served as serverless)
+if (process.env.VERCEL !== "1") {
+  startServer().catch((err) => {
+    console.error("Failed to start server", err);
+    process.exit(1);
+  });
+}
