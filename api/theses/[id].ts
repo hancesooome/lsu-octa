@@ -67,6 +67,23 @@ export default async function handler(
 
   if (req.method === "DELETE") {
     try {
+      const { data: thesis } = await sb.from("theses").select("cover_image_url, pdf_url").eq("id", id).maybeSingle();
+      const paths: string[] = [];
+      if (thesis?.cover_image_url) {
+        const m = String(thesis.cover_image_url).match(/\/research-files\/(.+)$/);
+        if (m) paths.push(m[1]);
+      }
+      if (thesis?.pdf_url) {
+        const m = String(thesis.pdf_url).match(/\/research-files\/(.+)$/);
+        if (m) paths.push(m[1]);
+      }
+      if (paths.length > 0) {
+        try {
+          await sb.storage.from("research-files").remove(paths);
+        } catch (storageErr) {
+          console.error("[delete thesis] storage remove:", storageErr);
+        }
+      }
       const { error } = await sb.from("theses").delete().eq("id", id);
       if (error) return res.status(500).json({ error: error.message || "Failed to delete thesis" });
       res.status(200).json({ success: true });

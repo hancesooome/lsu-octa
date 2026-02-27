@@ -184,6 +184,23 @@ app.patch("/api/theses/:id", async (req, res) => {
 app.delete("/api/theses/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
+    const { data: thesis } = await supabase().from("theses").select("cover_image_url, pdf_url").eq("id", id).maybeSingle();
+    const paths: string[] = [];
+    if (thesis?.cover_image_url) {
+      const m = String(thesis.cover_image_url).match(/\/research-files\/(.+)$/);
+      if (m) paths.push(m[1]);
+    }
+    if (thesis?.pdf_url) {
+      const m = String(thesis.pdf_url).match(/\/research-files\/(.+)$/);
+      if (m) paths.push(m[1]);
+    }
+    if (paths.length > 0) {
+      try {
+        await supabase().storage.from("research-files").remove(paths);
+      } catch (storageErr) {
+        console.error("[delete thesis] storage remove:", storageErr);
+      }
+    }
     const { error } = await supabase().from("theses").delete().eq("id", id);
     if (error) return res.status(500).json({ error: error.message || "Failed to delete thesis" });
     res.json({ success: true });

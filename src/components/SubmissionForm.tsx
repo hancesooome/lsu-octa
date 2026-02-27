@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { COLLEGES, User, Collaborator } from '../types';
-import { Upload, CheckCircle, Plus, X } from 'lucide-react';
+import { Upload, CheckCircle, Plus, X, Loader2, FileText } from 'lucide-react';
+import { uploadResearchFile, validateFile } from '../supabase';
 
 interface SubmissionFormProps {
   user: User;
@@ -23,6 +24,12 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
   const [collabLookupError, setCollabLookupError] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const addCollaborator = async () => {
     const id = collabIdInput.trim();
@@ -58,6 +65,48 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
       ...formData,
       collaborators: formData.collaborators.filter(c => c.id_number !== idNumber)
     });
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverError(null);
+    const err = validateFile(file, 'cover');
+    if (err) {
+      setCoverError(err);
+      return;
+    }
+    setCoverUploading(true);
+    try {
+      const url = await uploadResearchFile(file, 'cover');
+      setFormData(f => ({ ...f, cover_image_url: url }));
+    } catch (err) {
+      setCoverError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setCoverUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPdfError(null);
+    const err = validateFile(file, 'pdf');
+    if (err) {
+      setPdfError(err);
+      return;
+    }
+    setPdfUploading(true);
+    try {
+      const url = await uploadResearchFile(file, 'pdf');
+      setFormData(f => ({ ...f, pdf_url: url }));
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setPdfUploading(false);
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -206,17 +255,55 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
         </div>
 
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-card p-6 border-dashed border-2 border-lsu-green-primary/20 flex flex-col items-center justify-center text-center">
-            <Upload size={32} className="text-lsu-green-primary/40 mb-3" />
-            <p className="text-sm font-medium text-theme-text mb-1">Cover Image</p>
-            <p className="text-xs text-theme-muted mb-4">JPG, PNG up to 5MB</p>
-            <button type="button" className="btn-secondary py-2 px-4 text-xs">Browse Files</button>
+          <div className="glass-card p-6 border-dashed border-2 border-lsu-green-primary/20 flex flex-col items-center justify-center text-center min-h-[180px]">
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/jpg"
+              className="hidden"
+              onChange={handleCoverChange}
+              disabled={coverUploading}
+            />
+            {formData.cover_image_url ? (
+              <div className="w-full flex flex-col items-center">
+                <img src={formData.cover_image_url} alt="Cover preview" className="max-h-24 rounded-lg object-cover border border-theme-muted/30" />
+                <p className="text-xs text-theme-muted mt-2 truncate max-w-full">Cover image uploaded</p>
+                <button type="button" onClick={() => setFormData(f => ({ ...f, cover_image_url: '' }))} className="text-red-500 text-xs mt-1 hover:underline">Remove</button>
+              </div>
+            ) : (
+              <>
+                {coverUploading ? <Loader2 size={32} className="text-lsu-green-primary animate-spin mb-3" /> : <Upload size={32} className="text-lsu-green-primary/40 mb-3" />}
+                <p className="text-sm font-medium text-theme-text mb-1">Cover Image</p>
+                <p className="text-xs text-theme-muted mb-4">JPG, PNG up to 5MB</p>
+                <button type="button" onClick={() => coverInputRef.current?.click()} disabled={coverUploading} className="btn-secondary py-2 px-4 text-xs">Browse Files</button>
+              </>
+            )}
+            {coverError && <p className="text-red-500 text-xs mt-2">{coverError}</p>}
           </div>
-          <div className="glass-card p-6 border-dashed border-2 border-lsu-green-primary/20 flex flex-col items-center justify-center text-center">
-            <Upload size={32} className="text-lsu-green-primary/40 mb-3" />
-            <p className="text-sm font-medium text-theme-text mb-1">Full PDF Document</p>
-            <p className="text-xs text-theme-muted mb-4">PDF only up to 20MB</p>
-            <button type="button" className="btn-secondary py-2 px-4 text-xs">Browse Files</button>
+          <div className="glass-card p-6 border-dashed border-2 border-lsu-green-primary/20 flex flex-col items-center justify-center text-center min-h-[180px]">
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handlePdfChange}
+              disabled={pdfUploading}
+            />
+            {formData.pdf_url ? (
+              <div className="w-full flex flex-col items-center">
+                <FileText size={40} className="text-lsu-green-primary mb-2" />
+                <p className="text-xs text-theme-muted">PDF uploaded</p>
+                <button type="button" onClick={() => setFormData(f => ({ ...f, pdf_url: '' }))} className="text-red-500 text-xs mt-1 hover:underline">Remove</button>
+              </div>
+            ) : (
+              <>
+                {pdfUploading ? <Loader2 size={32} className="text-lsu-green-primary animate-spin mb-3" /> : <Upload size={32} className="text-lsu-green-primary/40 mb-3" />}
+                <p className="text-sm font-medium text-theme-text mb-1">Full PDF Document</p>
+                <p className="text-xs text-theme-muted mb-4">PDF only up to 20MB</p>
+                <button type="button" onClick={() => pdfInputRef.current?.click()} disabled={pdfUploading} className="btn-secondary py-2 px-4 text-xs">Browse Files</button>
+              </>
+            )}
+            {pdfError && <p className="text-red-500 text-xs mt-2">{pdfError}</p>}
           </div>
         </div>
 
@@ -242,7 +329,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
       <div className="flex justify-end pt-6">
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || coverUploading || pdfUploading}
           className="btn-primary px-12 py-4 text-lg"
         >
           {loading ? 'Submitting...' : 'Submit Thesis'}
