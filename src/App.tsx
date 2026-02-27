@@ -36,6 +36,10 @@ export default function App() {
     try {
       const response = await fetch('/api/college-stats');
       const data = await response.json();
+      if (!response.ok || !Array.isArray(data)) {
+        setCollegeStats({});
+        return;
+      }
       const statsMap = data.reduce((acc: any, curr: any) => {
         acc[curr.college] = curr.count;
         return acc;
@@ -43,6 +47,7 @@ export default function App() {
       setCollegeStats(statsMap);
     } catch (err) {
       console.error(err);
+      setCollegeStats({});
     }
   };
 
@@ -70,6 +75,10 @@ export default function App() {
 
       const response = await fetch(`/api/theses?${params.toString()}`);
       const rawData = await response.json();
+      if (!response.ok || !Array.isArray(rawData)) {
+        setTheses([]);
+        return;
+      }
       const data = rawData.map((t: any) => ({
         ...t,
         awardee: !!t.awardee,
@@ -78,6 +87,7 @@ export default function App() {
       setTheses(data);
     } catch (err) {
       console.error(err);
+      setTheses([]);
     } finally {
       setLoading(false);
     }
@@ -87,17 +97,18 @@ export default function App() {
     try {
       const response = await fetch('/api/theses/featured');
       const raw = await response.json();
-      if (raw) {
-        setFeaturedThesis({
-          ...raw,
-          awardee: !!raw.awardee,
-          featured: !!raw.featured,
-        });
-      } else {
+      if (!response.ok || !raw || typeof raw !== 'object') {
         setFeaturedThesis(null);
+        return;
       }
+      setFeaturedThesis({
+        ...raw,
+        awardee: !!raw.awardee,
+        featured: !!raw.featured,
+      });
     } catch (err) {
       console.error(err);
+      setFeaturedThesis(null);
     }
   };
 
