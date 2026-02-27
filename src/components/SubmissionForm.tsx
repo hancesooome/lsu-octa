@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { COLLEGES, User } from '../types';
-import { Upload, CheckCircle } from 'lucide-react';
+import { COLLEGES, User, Collaborator } from '../types';
+import { Upload, CheckCircle, Plus, X } from 'lucide-react';
 
 interface SubmissionFormProps {
   user: User;
@@ -16,10 +16,49 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
     summary: '',
     cover_image_url: '',
     pdf_url: '',
-    is_awardee_candidate: false
+    is_awardee_candidate: false,
+    collaborators: [] as Collaborator[]
   });
+  const [collabIdInput, setCollabIdInput] = useState('');
+  const [collabLookupError, setCollabLookupError] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const addCollaborator = async () => {
+    const id = collabIdInput.trim();
+    if (!id) return;
+    setCollabLookupError('');
+    try {
+      const res = await fetch(`/api/users/by-id-number?id=${encodeURIComponent(id)}`);
+      const contentType = res.headers.get('content-type') || '';
+      const text = await res.text();
+      if (!contentType.includes('application/json')) {
+        throw new Error('Server error. Ensure the API is running and the route is configured.');
+      }
+      const student = JSON.parse(text);
+      if (!res.ok) {
+        throw new Error(student.error || 'Student not found');
+      }
+      if (formData.collaborators.some(c => c.user_id === student.id || c.id_number === (student.id_number ?? id))) {
+        setCollabLookupError('Already added');
+        return;
+      }
+      setFormData({
+        ...formData,
+        collaborators: [...formData.collaborators, { id_number: student.id_number ?? id, name: student.name, user_id: student.id }]
+      });
+      setCollabIdInput('');
+    } catch (err) {
+      setCollabLookupError(err instanceof Error ? err.message : 'Student not found');
+    }
+  };
+
+  const removeCollaborator = (idNumber: string) => {
+    setFormData({
+      ...formData,
+      collaborators: formData.collaborators.filter(c => c.id_number !== idNumber)
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +68,7 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
       const response = await fetch('/api/theses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, submitted_by: user.id }),
+        body: JSON.stringify({ ...formData, submitted_by: user.id, collaborators: formData.collaborators.length ? formData.collaborators : undefined }),
       });
 
       if (response.ok) {
@@ -82,11 +121,44 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
           </label>
           <input
             type="text"
-            required
+            readOnly
             value={formData.author}
-            onChange={e => setFormData({ ...formData, author: e.target.value })}
-            className="w-full input-glass"
+            className="w-full input-glass bg-gray-100 cursor-not-allowed"
+            title="Author is set from your account"
           />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-xs font-bold uppercase tracking-wider text-theme-muted mb-2 ml-1">
+            Collaborators / Co-researchers
+          </label>
+          <p className="text-xs text-theme-muted mb-2">Add by student ID number (must exist in system)</p>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={collabIdInput}
+              onChange={e => { setCollabIdInput(e.target.value); setCollabLookupError(''); }}
+              placeholder="Enter ID number"
+              className="flex-1 input-glass"
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCollaborator())}
+            />
+            <button type="button" onClick={addCollaborator} className="btn-primary px-4 py-2 flex items-center gap-1">
+              <Plus size={16} /> Add
+            </button>
+          </div>
+          {collabLookupError && <p className="text-red-500 text-sm mb-2">{collabLookupError}</p>}
+          {formData.collaborators.length > 0 && (
+            <div className="space-y-2">
+              {formData.collaborators.map(c => (
+                <div key={c.id_number} className="flex items-center justify-between p-3 bg-white/10 rounded-xl">
+                  <span className="text-sm font-medium text-theme-title">{c.name} <span className="text-theme-muted">(ID: {c.id_number})</span></span>
+                  <button type="button" onClick={() => removeCollaborator(c.id_number)} className="p-1 rounded text-red-500 hover:bg-red-500/20">
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

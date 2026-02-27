@@ -7,9 +7,10 @@ interface StudentFormData {
   name: string;
   email: string;
   password: string;
+  id_number: string;
 }
 
-const emptyForm: StudentFormData = { name: '', email: '', password: '' };
+const emptyForm: StudentFormData = { name: '', email: '', password: '', id_number: '' };
 
 export const StudentManagement: React.FC = () => {
   const [students, setStudents] = useState<User[]>([]);
@@ -47,7 +48,7 @@ export const StudentManagement: React.FC = () => {
 
   const openEdit = (u: User) => {
     setEditing(u);
-    setForm({ name: u.name, email: u.email, password: '' });
+    setForm({ name: u.name, email: u.email, password: '', id_number: u.id_number || '' });
     setError('');
     setModalOpen(true);
   };
@@ -65,7 +66,7 @@ export const StudentManagement: React.FC = () => {
     setSubmitting(true);
     try {
       if (editing) {
-        const body: Record<string, string> = { name: form.name, email: form.email };
+        const body: Record<string, string> = { name: form.name, email: form.email, id_number: form.id_number };
         if (form.password) body.password = form.password;
         const res = await fetch(`/api/users/${editing.id}`, {
           method: 'PATCH',
@@ -136,6 +137,7 @@ export const StudentManagement: React.FC = () => {
               <div className="flex-grow min-w-0">
                 <p className="font-bold text-theme-title truncate">{u.name}</p>
                 <p className="text-sm text-theme-muted truncate">{u.email}</p>
+                {u.id_number && <p className="text-xs text-theme-muted truncate">ID: {u.id_number}</p>}
               </div>
               <div className="flex gap-2 flex-shrink-0">
                 <button
@@ -185,6 +187,16 @@ export const StudentManagement: React.FC = () => {
                     required
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full input-glass"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-theme-muted mb-2 ml-1">ID Number</label>
+                  <input
+                    type="text"
+                    value={form.id_number}
+                    onChange={(e) => setForm({ ...form, id_number: e.target.value })}
+                    placeholder="Student ID (for collaborator lookup)"
                     className="w-full input-glass"
                   />
                 </div>

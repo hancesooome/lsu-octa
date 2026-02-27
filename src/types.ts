@@ -3,6 +3,24 @@ export interface User {
   name: string;
   email: string;
   role: 'student' | 'librarian';
+  id_number?: string;
+}
+
+export interface Collaborator {
+  id_number: string;
+  name: string;
+  user_id?: number;
+}
+
+export interface CollaborationRequest {
+  id: number;
+  thesis_id: number;
+  collaborator_user_id: number;
+  requester_user_id: number;
+  status: 'pending' | 'accepted' | 'declined';
+  created_at?: string;
+  thesis?: { id: number; title: string; author: string; year: number };
+  requester?: { id: number; name: string };
 }
 
 export interface Thesis {
@@ -19,6 +37,7 @@ export interface Thesis {
   status: 'pending' | 'approved' | 'rejected';
   submitted_by: number;
   approval_date?: string;
+  collaborators?: { id_number: string; name: string }[];
 }
 
 export const COLLEGES = [

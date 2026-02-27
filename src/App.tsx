@@ -14,6 +14,7 @@ import { ThesisDetailPage } from './components/ThesisDetailPage';
 import { SubmissionForm } from './components/SubmissionForm';
 import { LibrarianDashboard } from './components/LibrarianDashboard';
 import { SubmissionStatus } from './components/SubmissionStatus';
+import { CollaborationRequests } from './components/CollaborationRequests';
 
 const STORAGE_KEY = 'lsu-octa-user';
 
@@ -39,6 +40,7 @@ export default function App() {
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [submissionsRefreshKey, setSubmissionsRefreshKey] = useState(0);
   const [collegeStats, setCollegeStats] = useState<{[key: string]: number}>({});
 
   const fetchCollegeStats = async () => {
@@ -517,10 +519,27 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <GlassCard className="p-6 md:col-span-2">
                       <h3 className="text-xl font-display font-bold text-theme-title mb-6">My Submissions</h3>
-                      <MySubmissionsList userId={user.id} onSelect={(t) => { setSelectedThesis(t); setView('thesis'); }} />
+                      <MySubmissionsList userId={user.id} refreshKey={submissionsRefreshKey} onSelect={(t) => { setSelectedThesis(t); setView('thesis'); }} />
                     </GlassCard>
                     
                     <div className="space-y-8">
+                      <GlassCard className="p-6">
+                        <CollaborationRequests
+                          userId={user.id}
+                          onAccept={() => setSubmissionsRefreshKey(k => k + 1)}
+                          onViewThesis={async (id) => {
+                            try {
+                              const res = await fetch(`/api/theses/${id}`);
+                              const t = await res.json();
+                              if (res.ok && t) {
+                                setSelectedThesis({ ...t, awardee: !!t.awardee, featured: !!t.featured });
+                                setView('thesis');
+                              }
+                            } catch (e) { console.error(e); }
+                          }}
+                        />
+                      </GlassCard>
+
                       <GlassCard className="p-6">
                         <h3 className="text-lg font-display font-bold text-theme-title mb-4">Submission Status</h3>
                         <SubmissionStatus userId={user.id} />
@@ -813,7 +832,7 @@ function CollegesView({ onSelectCollege }: { onSelectCollege: (name: string) => 
   );
 }
 
-function MySubmissionsList({ userId, onSelect }: { userId: number, onSelect: (t: Thesis) => void }) {
+function MySubmissionsList({ userId, refreshKey, onSelect }: { userId: number; refreshKey?: number; onSelect: (t: Thesis) => void }) {
   const [submissions, setSubmissions] = useState<Thesis[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -822,7 +841,7 @@ function MySubmissionsList({ userId, onSelect }: { userId: number, onSelect: (t:
       try {
         const response = await fetch(`/api/my-submissions/${userId}`);
         const data = await response.json();
-        setSubmissions(data);
+        setSubmissions(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -830,7 +849,7 @@ function MySubmissionsList({ userId, onSelect }: { userId: number, onSelect: (t:
       }
     };
     fetchMySubmissions();
-  }, [userId]);
+  }, [userId, refreshKey]);
 
   if (loading) return <div className="space-y-4">{[1, 2].map(i => <div key={i} className="h-20 bg-white/10 animate-pulse rounded-xl"></div>)}</div>;
 
@@ -845,7 +864,12 @@ function MySubmissionsList({ userId, onSelect }: { userId: number, onSelect: (t:
           onClick={() => onSelect(t)}
         >
           <div className="min-w-0 flex-grow mr-4">
-            <h4 className="font-bold truncate text-theme-title">{t.title}</h4>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-bold truncate text-theme-title">{t.title}</h4>
+              {t.submitted_by !== userId && (
+                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-lsu-gold/20 text-lsu-gold shrink-0">Co-researcher</span>
+              )}
+            </div>
             <p className="text-xs text-theme-muted">
               {t.year} • {COLLEGES.find(c => 
                 t.college === c.name || 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Calendar, BookOpen, Award, ExternalLink } from 'lucide-react';
 import { Thesis, COLLEGES } from '../types';
 
@@ -9,7 +9,22 @@ interface ThesisDetailPageProps {
 
 const SAMPLE_PDF = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
 
-export const ThesisDetailPage: React.FC<ThesisDetailPageProps> = ({ thesis, onBack }) => {
+export const ThesisDetailPage: React.FC<ThesisDetailPageProps> = ({ thesis: initialThesis, onBack }) => {
+  const [thesis, setThesis] = useState<Thesis>(initialThesis);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/theses/${initialThesis.id}`)
+      .then(res => res.json())
+      .then((t: Thesis) => {
+        if (!cancelled && t?.id) {
+          setThesis({ ...t, awardee: !!t.awardee, featured: !!t.featured } as Thesis);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [initialThesis.id]);
+
   const pdfUrl = thesis.pdf_url || SAMPLE_PDF;
   return (
     <div className="space-y-0">
@@ -103,6 +118,25 @@ export const ThesisDetailPage: React.FC<ThesisDetailPageProps> = ({ thesis, onBa
                   </div>
                 </div>
               </div>
+
+              {thesis.collaborators && thesis.collaborators.length > 0 && (
+                <div className="space-y-6">
+                  <span className="section-label">Collaborators / Co-researchers</span>
+                  <div className="space-y-2">
+                    {thesis.collaborators.map((c, i) => (
+                      <div key={i} className="flex items-center gap-4 p-3 bg-white/10 rounded-xl">
+                        <div className="w-10 h-10 rounded-full bg-lsu-green-deep/20 flex items-center justify-center font-serif text-lg text-theme-title">
+                          {c.name[0]}
+                        </div>
+                        <div>
+                          <p className="font-medium text-theme-title">{c.name}</p>
+                          <p className="text-xs font-mono text-theme-muted">ID: {c.id_number}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-6">
                 <span className="section-label">Classification</span>
