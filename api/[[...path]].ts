@@ -181,6 +181,18 @@ app.patch("/api/theses/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/theses/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { error } = await supabase().from("theses").delete().eq("id", id);
+    if (error) return res.status(500).json({ error: error.message || "Failed to delete thesis" });
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e instanceof Error ? e.message : "Internal server error" });
+  }
+});
+
 app.get("/api/users", async (_req, res) => {
   try {
     const { data, error } = await supabase().from("users").select("id, name, email, role, id_number").eq("role", "student").order("id", { ascending: false });

@@ -222,17 +222,17 @@ export const SubmissionForm: React.FC<SubmissionFormProps> = ({ user, onSuccess 
 
         <div className="md:col-span-2">
           <label className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative">
+            <div className="relative inline-flex shrink-0">
               <input
                 type="checkbox"
                 checked={formData.is_awardee_candidate}
                 onChange={e => setFormData({ ...formData, is_awardee_candidate: e.target.checked })}
                 className="sr-only peer"
               />
-              <div className="w-10 h-6 bg-white/50 border border-white/40 rounded-full peer-checked:bg-lsu-green-primary transition-all"></div>
-              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-4"></div>
+              <div className="w-10 h-6 rounded-full bg-theme-muted/60 border border-theme-muted/50 peer-checked:bg-lsu-green-primary peer-checked:border-lsu-green-primary transition-colors" aria-hidden="true" />
+              <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md border border-gray-200 transition-transform duration-200 peer-checked:translate-x-4 pointer-events-none" aria-hidden="true" />
             </div>
-            <span className="text-sm font-medium text-theme-text group-hover:text-lsu-green-primary transition-colors">
+            <span className="text-sm font-medium text-theme-text group-hover:text-theme-title transition-colors">
               Mark as candidate for Thesis of the Year
             </span>
           </label>

@@ -1,4 +1,5 @@
 -- Run in Supabase: SQL Editor
--- Ensures anon can UPDATE theses (needed when collaborator declines and is removed from thesis)
+-- Ensures anon can UPDATE and DELETE theses (collaborator decline, librarian delete)
 
 GRANT UPDATE ON public.theses TO anon;
+GRANT DELETE ON public.theses TO anon;

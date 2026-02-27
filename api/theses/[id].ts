@@ -65,5 +65,17 @@ export default async function handler(
     return;
   }
 
+  if (req.method === "DELETE") {
+    try {
+      const { error } = await sb.from("theses").delete().eq("id", id);
+      if (error) return res.status(500).json({ error: error.message || "Failed to delete thesis" });
+      res.status(200).json({ success: true });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: e instanceof Error ? e.message : "Internal server error" });
+    }
+    return;
+  }
+
   res.status(405).json({ error: "Method not allowed" });
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Thesis, COLLEGES } from '../types';
-import { Check, X, Eye, Award, Star, FileText, Users } from 'lucide-react';
+import { Check, X, Eye, Award, Star, FileText, Users, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { StudentManagement } from './StudentManagement';
 
@@ -81,6 +81,20 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
       const data = await res.json().catch(() => ({}));
       if (res.ok) fetchTheses();
       else setActionError((data as { error?: string })?.error || 'Failed to set featured');
+    } catch (err) {
+      console.error(err);
+      setActionError('Network error. Please try again.');
+    }
+  };
+
+  const deleteThesis = async (thesis: Thesis) => {
+    if (!window.confirm(`Permanently delete "${thesis.title}"? This cannot be undone.`)) return;
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/theses/${thesis.id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) fetchTheses();
+      else setActionError((data as { error?: string })?.error || 'Failed to delete');
     } catch (err) {
       console.error(err);
       setActionError('Network error. Please try again.');
@@ -233,6 +247,13 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
                   className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white/10 text-theme-title px-4 py-2 rounded-xl text-sm font-bold border border-white/20 hover:bg-white/20 transition-colors"
                 >
                   <Eye size={16} /> View
+                </button>
+                <button
+                  onClick={() => deleteThesis(thesis)}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-500/20 text-red-600 px-4 py-2 rounded-xl text-sm font-bold border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                  title="Delete from database"
+                >
+                  <Trash2 size={16} /> Delete
                 </button>
               </div>
             </motion.div>
