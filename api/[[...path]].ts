@@ -174,7 +174,7 @@ app.get("/api/users", async (_req, res) => {
   }
 });
 
-app.get("/api/users/by-id-number", async (req, res) => {
+const byIdNumberHandler = async (req: express.Request, res: express.Response) => {
   try {
     const idNumber = String(req.query.id ?? req.query.idNumber ?? "").trim();
     if (!idNumber) return res.status(400).json({ error: "ID number is required" });
@@ -186,7 +186,9 @@ app.get("/api/users/by-id-number", async (req, res) => {
     console.error(e);
     res.status(500).json({ error: "Internal server error" });
   }
-});
+};
+app.get("/api/users/by-id-number", byIdNumberHandler);
+app.get("/users/by-id-number", byIdNumberHandler);
 
 app.post("/api/users", async (req, res) => {
   try {
