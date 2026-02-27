@@ -3,7 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { createApiApp } from "./api-app";
+import { createApiApp } from "./api/api-app";
 
 dotenv.config();
 

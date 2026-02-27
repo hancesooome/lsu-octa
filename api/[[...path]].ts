@@ -1,4 +1,4 @@
-import { createApiApp } from "../api-app";
+import { createApiApp } from "./api-app";
 
 const app = createApiApp();
 

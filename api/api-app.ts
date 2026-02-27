@@ -1,6 +1,6 @@
 /**
  * API-only Express app for Vercel serverless.
- * Do NOT import server.ts or vite here – they crash in serverless.
+ * Lives inside api/ so Vercel bundles it with the function.
  */
 import express from "express";
 import { createClient } from "@supabase/supabase-js";
