@@ -38,6 +38,8 @@ export interface Thesis {
   submitted_by: number;
   approval_date?: string;
   collaborators?: { id_number: string; name: string }[];
+  /** Set by API when listing pending theses: number of collaborators who haven't accepted/declined yet */
+  pending_collaborator_count?: number;
 }
 
 export const COLLEGES = [

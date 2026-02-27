@@ -67,10 +67,18 @@ export function createApiApp() {
         const t = `%${search}%`;
         q = q.or(`title.ilike.${t},author.ilike.${t},summary.ilike.${t}`);
       }
-      q = q.order("year", { ascending: false }).order("id", { ascending: false });
-      const { data, error } = await q;
-      if (error) return res.status(500).json({ error: "Internal server error" });
-      res.json(data || []);
+    q = q.order("year", { ascending: false }).order("id", { ascending: false });
+    const { data, error } = await q;
+    if (error) return res.status(500).json({ error: "Internal server error" });
+    let list = data || [];
+    if (status === "pending" && list.length > 0) {
+      const ids = list.map((t: any) => t.id);
+      const { data: pendingRows } = await supabase().from("collaboration_requests").select("thesis_id").eq("status", "pending").in("thesis_id", ids);
+      const countByThesis: Record<number, number> = {};
+      (pendingRows || []).forEach((r: any) => { countByThesis[r.thesis_id] = (countByThesis[r.thesis_id] || 0) + 1; });
+      list = list.map((t: any) => ({ ...t, pending_collaborator_count: countByThesis[t.id] || 0 }));
+    }
+    res.json(list);
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: "Internal server error" });
@@ -147,6 +155,16 @@ export function createApiApp() {
     try {
       const { status, awardee, featured, approval_date } = req.body;
       const id = Number(req.params.id);
+      if (status === "approved" || status === "rejected") {
+        const { data: thesisRow } = await supabase().from("theses").select("id, collaborators").eq("id", id).maybeSingle();
+        const collabs = thesisRow?.collaborators;
+        const hasCollaborators = Array.isArray(collabs) && collabs.length > 0;
+        if (hasCollaborators) {
+          const { data: pending } = await supabase().from("collaboration_requests").select("id").eq("thesis_id", id).eq("status", "pending");
+          const pendingCount = (pending || []).length;
+          if (pendingCount > 0) return res.status(400).json({ error: "All collaborators must accept or decline their requests before this submission can be approved or rejected.", pendingCollaboratorCount: pendingCount });
+        }
+      }
       const u: any = {};
       if (status) u.status = status;
       if (awardee !== undefined) u.awardee = awardee;

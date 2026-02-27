@@ -13,9 +13,11 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchTheses = async () => {
     setLoading(true);
+    setActionError(null);
     try {
       const response = await fetch(`/api/theses?status=${activeTab}`);
       const data = await response.json();
@@ -32,15 +34,22 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
   }, [activeTab]);
 
   const handleAction = async (id: number, status: string) => {
+    setActionError(null);
     try {
-      await fetch(`/api/theses/${id}`, {
+      const res = await fetch(`/api/theses/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, approval_date: new Date().toISOString() }),
       });
-      fetchTheses();
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        fetchTheses();
+      } else {
+        setActionError((data as { error?: string })?.error || `Failed to ${status}`);
+      }
     } catch (err) {
       console.error(err);
+      setActionError('Network error. Please try again.');
     }
   };
 
@@ -118,6 +127,12 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
           </div>
         </div>
 
+        {actionError && (
+          <div className="p-4 rounded-xl bg-red-500/20 text-red-700 text-sm font-medium">
+            {actionError}
+          </div>
+        )}
+
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="w-12 h-12 border-4 border-lsu-green-primary/20 border-t-lsu-green-primary rounded-full animate-spin"></div>
@@ -161,18 +176,26 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
               <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                 {activeTab === 'pending' && (
                   <>
-                    <button
-                      onClick={() => handleAction(thesis.id, 'approved')}
-                      className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-600 transition-colors"
-                    >
-                      <Check size={16} /> Approve
-                    </button>
-                    <button
-                      onClick={() => handleAction(thesis.id, 'rejected')}
-                      className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-600 transition-colors"
-                    >
-                      <X size={16} /> Reject
-                    </button>
+                    {(thesis.pending_collaborator_count ?? 0) > 0 ? (
+                      <span className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-amber-500/20 text-amber-800 border border-amber-500/30">
+                        Waiting for {thesis.pending_collaborator_count} collaborator(s) to accept or decline
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleAction(thesis.id, 'approved')}
+                          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-600 transition-colors"
+                        >
+                          <Check size={16} /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleAction(thesis.id, 'rejected')}
+                          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-600 transition-colors"
+                        >
+                          <X size={16} /> Reject
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
                 {activeTab === 'approved' && (
