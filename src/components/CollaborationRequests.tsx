@@ -88,12 +88,12 @@ export const CollaborationRequests: React.FC<CollaborationRequestsProps> = ({ us
         {requests.map(r => (
           <div
             key={r.id}
-            className="p-4 bg-white/10 rounded-xl border border-white/20 space-y-3"
+            className="p-4 bg-white/10 rounded-xl border border-white/20 space-y-3 relative"
           >
             <div>
               <p
-                className={`font-bold text-theme-title ${onViewThesis && r.thesis ? 'cursor-pointer hover:text-lsu-green-primary' : ''}`}
-                onClick={() => onViewThesis && r.thesis && onViewThesis(r.thesis.id)}
+                className={`font-bold text-theme-title inline-block max-w-full ${onViewThesis && r.thesis ? 'cursor-pointer hover:text-lsu-green-primary' : ''}`}
+                onClick={(e) => { e.stopPropagation(); onViewThesis && r.thesis && onViewThesis(r.thesis.id); }}
               >
                 {r.thesis?.title ?? 'Untitled thesis'}
               </p>
@@ -101,19 +101,21 @@ export const CollaborationRequests: React.FC<CollaborationRequestsProps> = ({ us
                 {r.requester?.name ?? 'Author'} invited you as a collaborator / co-researcher
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 relative z-10">
               <button
-                onClick={() => handleRespond(r.id, 'accepted')}
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleRespond(r.id, 'accepted'); }}
                 disabled={acting === r.id}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-lsu-green-primary text-white text-sm font-bold disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg bg-lsu-green-primary text-white text-sm font-bold disabled:opacity-50 cursor-pointer select-none touch-manipulation"
               >
                 <Check size={16} />
                 Accept
               </button>
               <button
-                onClick={() => handleRespond(r.id, 'declined')}
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleRespond(r.id, 'declined'); }}
                 disabled={acting === r.id}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 text-theme-title text-sm font-medium hover:bg-white/30 disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-lg bg-white/20 text-theme-title text-sm font-medium hover:bg-white/30 disabled:opacity-50 cursor-pointer select-none touch-manipulation"
               >
                 <X size={16} />
                 Decline
