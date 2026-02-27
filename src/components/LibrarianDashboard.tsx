@@ -54,28 +54,36 @@ export const LibrarianDashboard: React.FC<LibrarianDashboardProps> = ({ onViewTh
   };
 
   const toggleAward = async (id: number, current: boolean) => {
+    setActionError(null);
     try {
-      await fetch(`/api/theses/${id}`, {
+      const res = await fetch(`/api/theses/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ awardee: !current }),
       });
-      fetchTheses();
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) fetchTheses();
+      else setActionError((data as { error?: string })?.error || 'Failed to update award');
     } catch (err) {
       console.error(err);
+      setActionError('Network error. Please try again.');
     }
   };
 
   const setFeatured = async (id: number) => {
+    setActionError(null);
     try {
-      await fetch(`/api/theses/${id}`, {
+      const res = await fetch(`/api/theses/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ featured: true }),
       });
-      fetchTheses();
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) fetchTheses();
+      else setActionError((data as { error?: string })?.error || 'Failed to set featured');
     } catch (err) {
       console.error(err);
+      setActionError('Network error. Please try again.');
     }
   };
 
