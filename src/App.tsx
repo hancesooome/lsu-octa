@@ -712,6 +712,12 @@ export default function App() {
         </AnimatePresence>
       </main>
 
+      <footer className="max-w-7xl mx-auto px-4 md:px-8 py-6 text-center border-t border-white/10">
+        <p className="text-sm text-theme-muted">
+          Developed by <span className="font-semibold text-theme-text">Hance Dagondon</span> · © 2026
+        </p>
+      </footer>
+
       {/* Mobile Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden px-4 pb-4">
         <GlassPanel className="flex items-center justify-around py-3 px-4 shadow-2xl gap-1">
