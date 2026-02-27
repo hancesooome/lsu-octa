@@ -12,6 +12,7 @@ export const CollaborationRequests: React.FC<CollaborationRequestsProps> = ({ us
   const [requests, setRequests] = useState<CollaborationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchRequests = async () => {
     try {
@@ -32,18 +33,23 @@ export const CollaborationRequests: React.FC<CollaborationRequestsProps> = ({ us
 
   const handleRespond = async (requestId: number, status: 'accepted' | 'declined') => {
     setActing(requestId);
+    setError(null);
     try {
       const res = await fetch(`/api/collaboration-requests/${requestId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setRequests(prev => prev.filter(r => r.id !== requestId));
         if (status === 'accepted') onAccept?.();
+      } else {
+        setError((data as { error?: string })?.error || `Failed to ${status} (${res.status})`);
       }
     } catch (err) {
       console.error(err);
+      setError('Network error. Please try again.');
     } finally {
       setActing(null);
     }
@@ -84,6 +90,11 @@ export const CollaborationRequests: React.FC<CollaborationRequestsProps> = ({ us
           {requests.length}
         </span>
       </h3>
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-500/20 text-red-600 text-sm">
+          {error}
+        </div>
+      )}
       <div className="space-y-3">
         {requests.map(r => (
           <div
