@@ -103,6 +103,9 @@ lsu-octa/
 │   ├── collaboration-requests/
 │   ├── my-submissions/
 │   └── users/
+├── public/                 # Static assets (served at root)
+│   ├── sitemap.xml         # Sitemap for search engines
+│   └── robots.txt          # Crawler directives
 ├── src/
 │   ├── components/         # React components
 │   │   ├── SubmissionForm.tsx
@@ -139,6 +142,18 @@ lsu-octa/
 | `npm run build`| Production build (Vite)        |
 | `npm run preview` | Serve `dist` locally        |
 | `npm run lint` | Type-check (tsc)               |
+
+---
+
+## SEO & discoverability
+
+After deploying, help search engines find your site:
+
+1. **Replace the domain** in `public/sitemap.xml` and `public/robots.txt` — change `https://your-domain.com` to your live URL (e.g. `https://lsu-octa.vercel.app`).
+
+2. **Google Search Console** — Go to [search.google.com/search-console](https://search.google.com/search-console), add your property, verify ownership, and submit your sitemap URL (e.g. `https://your-domain.com/sitemap.xml`).
+
+3. **Meta tags** — Already set in `index.html` (title, description, Open Graph, Twitter Card). Add `og:image` and `twitter:image` with a 1200×630 preview image when ready.
 
 ---
 
